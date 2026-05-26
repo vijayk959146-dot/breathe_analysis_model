@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sensor Dashboard - AirInsight</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <nav class="nav-dashboard">
+    <div class="nav-content">
+      <div class="nav-brand">AirInsight</div>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="graph.html" class="active">Sensor Dashboard</a>
+        <a href="detection.html">Health Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-container" style="padding-top: 100px;">
+    <div class="dashboard-header">
+      <h1>Sensor Dashboard</h1>
+      <p>Real-time monitoring of breath biomarkers</p>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- Sensor Status Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">📡</div>
+          <h3 class="card-title">Sensor Status</h3>
+        </div>
+        <div id="sensorStatus" class="status-indicator status-disconnected">
+          <span class="loading-spinner"></span>
+          Checking...
+        </div>
+        <div class="metric-grid">
+          <div class="metric-card">
+            <span class="metric-value" id="mq2-value">0.00</span>
+            <span class="metric-label">MQ-2 (H₂/CH₄)</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-value" id="mq3-value">0.00</span>
+            <span class="metric-label">MQ-3 (Acetone)</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-value" id="mq7-value">0.00</span>
+            <span class="metric-label">MQ-7 (CO)</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-value" id="mq135-value">0.00</span>
+            <span class="metric-label">MQ-135 (NH₃/VOCs)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gas Concentration Chart Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">📊</div>
+          <h3 class="card-title">Gas Concentration Trends</h3>
+        </div>
+        <div class="chart-container">
+          <canvas id="gasChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

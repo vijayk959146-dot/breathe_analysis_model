@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Health Dashboard - AirInsight</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .result-box {
+      text-align: center;
+      padding: 2rem;
+      border-radius: 16px;
+      margin-top: 1rem;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      transition: all 0.4s ease;
+    }
+    .result-healthy {
+      background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.1));
+      border: 2px solid #10b981;
+      color: #10b981;
+    }
+    .result-alert {
+      background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(185,28,28,0.1));
+      border: 2px solid #ef4444;
+      color: #ef4444;
+    }
+    .result-waiting {
+      background: linear-gradient(135deg, rgba(100,116,139,0.2), rgba(71,85,105,0.1));
+      border: 2px solid #64748b;
+      color: #94a3b8;
+    }
+    .result-icon {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+    .flags-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav-dashboard">
+    <div class="nav-content">
+      <div class="nav-brand">AirInsight</div>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="graph.html">Sensor Dashboard</a>
+        <a href="detection.html" class="active">Health Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-container" style="padding-top: 100px;">
+    <div class="dashboard-header">
+      <h1>Health Dashboard</h1>
+      <p>Real-time breath analysis and disease detection</p>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- Disease Prediction Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">🔍</div>
+          <h3 class="card-title">Disease Detection Result</h3>
+        </div>
+        <div id="sensorStatus" class="status-indicator status-disconnected">
+          <span class="loading-spinner"></span>
+          Waiting for sensor data...
+        </div>
+        
+        <button id="detectBtn" style="width: 100%; padding: 1rem; margin: 1rem 0; border: none; border-radius: 8px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: transform 0.2s ease, opacity 0.2s ease; box-shadow: 0 4px 12px rgba(59,130,246,0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.opacity='0.9'" onmouseout="this.style.transform='translateY(0)'; this.style.opacity='1'">
+          Analyze Breath Sample
+        </button>
+
+        <div id="resultBox" class="result-box result-waiting">
+          <div class="result-icon">🔬</div>
+          <div id="prediction">Ready for Analysis...</div>
+        </div>
+      </div>
+
+      <!-- Health Flags Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">🚨</div>
+          <h3 class="card-title">Health Flags</h3>
+        </div>
+        <div class="flags-title">Detected Abnormalities</div>
+        <div id="flags" class="flags-list">
+          <span style="color: var(--text-secondary);">No flags detected yet...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

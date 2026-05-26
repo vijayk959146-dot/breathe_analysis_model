@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AirInsight - Breath Analysis Platform</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="nav-dashboard">
+    <div class="nav-content">
+      <div class="nav-brand">AirInsight</div>
+      <div class="nav-links">
+        <a href="index.html" class="active">Home</a>
+        <a href="graph.html">Sensor Dashboard</a>
+        <a href="detection.html">Health Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-container" style="padding-top: 100px;">
+    <div class="dashboard-header">
+      <h1>Welcome to AirInsight</h1>
+      <p>Advanced breath analysis for proactive health monitoring</p>
+    </div>
+
+    <!-- Hero Image Section -->
+    <div class="hero-image">
+      <img src="breathe_biomarkers.png" alt="Breath Biomarkers Analysis" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);">
+      <p style="text-align: center; margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem;">Biomarker analysis through MQ sensor gas detection</p>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">📡</div>
+          <h3 class="card-title">Sensor Dashboard</h3>
+        </div>
+        <p>Monitor real-time gas concentrations from MQ sensors with interactive charts and status indicators.</p>
+        <br>
+        <a href="graph.html" style="display: inline-block; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; text-decoration: none; border-radius: 8px; font-weight: 500; transition: all 0.3s ease;">View Sensors</a>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">🔍</div>
+          <h3 class="card-title">Health Dashboard</h3>
+        </div>
+        <p>AI-powered disease detection with probability analysis and health flag alerts for 12+ conditions.</p>
+        <br>
+        <a href="detection.html" style="display: inline-block; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; text-decoration: none; border-radius: 8px; font-weight: 500; transition: all 0.3s ease;">View Health</a>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">🧬</div>
+          <h3 class="card-title">Supported Biomarkers</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem;">
+          <div>
+            <strong>MQ-2:</strong> Hydrogen, Methane<br>
+            <strong>MQ-3:</strong> Acetone<br>
+            <strong>MQ-7:</strong> Carbon Monoxide<br>
+            <strong>MQ-135:</strong> Ammonia, VOCs
+          </div>
+          <div>
+            <strong>Diseases Detected:</strong><br>
+            Asthma, Diabetes, COPD<br>
+            Tuberculosis, Pneumonia<br>
+            Heart Failure, Cystic Fibrosis<br>
+            And more...
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">⚡</div>
+          <h3 class="card-title">Real-time Analysis</h3>
+        </div>
+        <p>Continuous monitoring with ESP32 integration for live data streaming and instant health insights.</p>
+        <div style="margin-top: 1rem; padding: 1rem; background: var(--surface); border-radius: 8px; border: 1px solid var(--border);">
+          <strong>Status:</strong> <span id="systemStatus" style="color: var(--text-secondary);">Checking...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer style="text-align: center; padding: 2rem; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px); border-top: 1px solid var(--border); margin-top: 2rem;">
+    <p>&copy; 2026 Breath Analysis Project | by team airinsight</p>
+  </footer>
+
+  <script>
+    // Simple status check
+    setInterval(() => {
+      fetch("http://localhost:5000/data")
+        .then(response => {
+          if (response.ok) {
+            document.getElementById("systemStatus").textContent = "System Online";
+            document.getElementById("systemStatus").style.color = "var(--success)";
+          } else {
+            document.getElementById("systemStatus").textContent = "Backend Offline";
+            document.getElementById("systemStatus").style.color = "var(--error)";
+          }
+        })
+        .catch(() => {
+          document.getElementById("systemStatus").textContent = "Connection Error";
+          document.getElementById("systemStatus").style.color = "var(--warning)";
+        });
+    }, 5000);
+  </script>
+</body>
+</html>
