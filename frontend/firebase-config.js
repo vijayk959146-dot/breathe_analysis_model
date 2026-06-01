@@ -8,12 +8,13 @@
  */
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBq51g910YGl9oduLea8LcyO73e4NeSfc0",
+  authDomain: "airflowinsight.firebaseapp.com",
+  projectId: "airflowinsight",
+  storageBucket: "airflowinsight.firebasestorage.app",
+  messagingSenderId: "456637506916",
+  appId: "1:456637506916:web:b0879cf24e24baed8f4671",
+  measurementId: "G-415T58LC1W"
 };
 
 // Check if developer has replaced placeholders
