@@ -19,7 +19,7 @@ const firebaseConfig = {
 
 // Check if developer has replaced placeholders
 const isDemoMode = !firebaseConfig.apiKey || 
-                   firebaseConfig.apiKey.includes("YOUR_API_KEY") || 
+                   firebaseConfig.apiKey.includes("AIzaSyBq51g910YGl9oduLea8LcyO73e4NeSfc0") || 
                    firebaseConfig.apiKey.trim() === "";
 
 // Make configuration status globally accessible
