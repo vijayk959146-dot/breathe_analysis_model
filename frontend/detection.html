@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Health Dashboard - AirInsight</title>
   <link rel="stylesheet" href="style.css">
+  <script src="firebase-config.js"></script>
   <style>
     .result-box {
       text-align: center;
@@ -17,19 +18,21 @@
       transition: all 0.4s ease;
     }
     .result-healthy {
-      background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.1));
-      border: 2px solid #10b981;
-      color: #10b981;
+      background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05));
+      border: 1px solid var(--success);
+      color: var(--success);
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
     }
     .result-alert {
-      background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(185,28,28,0.1));
-      border: 2px solid #ef4444;
-      color: #ef4444;
+      background: linear-gradient(135deg, rgba(244,63,94,0.15), rgba(244,63,94,0.05));
+      border: 1px solid var(--secondary);
+      color: #fda4af;
+      box-shadow: 0 8px 24px rgba(244, 63, 94, 0.15);
     }
     .result-waiting {
-      background: linear-gradient(135deg, rgba(100,116,139,0.2), rgba(71,85,105,0.1));
-      border: 2px solid #64748b;
-      color: #94a3b8;
+      background: linear-gradient(135deg, rgba(168,162,158,0.1), rgba(168,162,158,0.03));
+      border: 1px solid var(--text-secondary);
+      color: var(--text-secondary);
     }
     .result-icon {
       font-size: 3rem;
@@ -43,16 +46,36 @@
       letter-spacing: 1px;
       margin-bottom: 0.75rem;
     }
+    
+    /* Toggle Switch Styles */
+    .switch input:checked + .slider {
+      background-color: var(--primary) !important;
+    }
+    .switch input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 4px;
+      bottom: 4px;
+      background-color: #faf9f6;
+      transition: .3s;
+      border-radius: 50%;
+    }
   </style>
 </head>
 <body>
   <nav class="nav-dashboard">
     <div class="nav-content">
       <div class="nav-brand">AirInsight</div>
-      <div class="nav-links">
+      <div class="nav-links" id="navLinks">
         <a href="index.html">Home</a>
         <a href="graph.html">Sensor Dashboard</a>
         <a href="detection.html" class="active">Health Dashboard</a>
+        <a href="history.html">History</a>
       </div>
     </div>
   </nav>
@@ -75,13 +98,28 @@
           Waiting for sensor data...
         </div>
         
-        <button id="detectBtn" style="width: 100%; padding: 1rem; margin: 1rem 0; border: none; border-radius: 8px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: transform 0.2s ease, opacity 0.2s ease; box-shadow: 0 4px 12px rgba(59,130,246,0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.opacity='0.9'" onmouseout="this.style.transform='translateY(0)'; this.style.opacity='1'">
+        <button id="detectBtn" style="width: 100%; padding: 1rem; margin: 1rem 0; border: none; border-radius: 12px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #090807; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, opacity 0.3s ease; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.25);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 12px 28px rgba(245, 158, 11, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 24px rgba(245, 158, 11, 0.25)'">
           Analyze Breath Sample
         </button>
 
         <div id="resultBox" class="result-box result-waiting">
           <div class="result-icon">🔬</div>
           <div id="prediction">Ready for Analysis...</div>
+        </div>
+
+        <!-- Cloud Sync Toggle -->
+        <div id="cloudSyncContainer" style="margin-top: 1.5rem; padding: 1rem; background: var(--surface-light); border-radius: 12px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">☁️</span>
+            <div>
+              <strong style="display: block;">Auto-Save to History</strong>
+              <span id="cloudStatusLabel" style="color: var(--text-secondary); font-size: 0.8rem;">Sign in to save test history</span>
+            </div>
+          </div>
+          <label class="switch" style="position: relative; display: inline-block; width: 44px; height: 22px;">
+            <input type="checkbox" id="autoSaveToggle" disabled style="opacity: 0; width: 0; height: 0;">
+            <span class="slider" style="position: absolute; cursor: not-allowed; top: 0; left: 0; right: 0; bottom: 0; background-color: #2e2621; transition: .3s; border-radius: 34px;"></span>
+          </label>
         </div>
       </div>
 

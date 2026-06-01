@@ -5,15 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AirInsight - Breath Analysis Platform</title>
   <link rel="stylesheet" href="style.css">
+  <script src="firebase-config.js"></script>
 </head>
 <body>
   <nav class="nav-dashboard">
     <div class="nav-content">
       <div class="nav-brand">AirInsight</div>
-      <div class="nav-links">
+      <div class="nav-links" id="navLinks">
         <a href="index.html" class="active">Home</a>
         <a href="graph.html">Sensor Dashboard</a>
         <a href="detection.html">Health Dashboard</a>
+        <a href="history.html">History</a>
       </div>
     </div>
   </nav>
@@ -93,6 +95,65 @@
   </footer>
 
   <script>
+    // Firebase Auth State Listener for Navbar
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        if (window.authService) {
+          window.authService.onAuthStateChanged((user) => {
+            updateNavbarAuth(user);
+          });
+        }
+      }, 50);
+    });
+
+    function updateNavbarAuth(user) {
+      const navLinks = document.getElementById("navLinks");
+      if (!navLinks) return;
+      
+      const existingBadge = document.getElementById("nav-auth-profile");
+      if (existingBadge) existingBadge.remove();
+      
+      if (user) {
+        const email = user.email || "User";
+        const emailShort = email.length > 20 ? email.substring(0, 17) + "..." : email;
+        
+        const badge = document.createElement("div");
+        badge.id = "nav-auth-profile";
+        badge.style.cssText = `
+          display: flex;
+          align-items: center;
+          gap: 0.8rem;
+          margin-left: 1.5rem;
+          padding-left: 1.5rem;
+          border-left: 1px solid var(--border);
+        `;
+        badge.innerHTML = `
+          <span style="font-size:0.85rem; color:var(--text-secondary);">${emailShort}</span>
+          <button onclick="handleLogout()" style="background:transparent; border:1px solid rgba(239,68,68,0.4); color:#fca5a5; font-size:0.75rem; font-weight:600; padding:0.3rem 0.6rem; border-radius:4px; cursor:pointer; transition:all 0.2s;">Sign Out</button>
+        `;
+        navLinks.appendChild(badge);
+      } else {
+        const badge = document.createElement("div");
+        badge.id = "nav-auth-profile";
+        badge.style.cssText = `
+          margin-left: 1.5rem;
+          padding-left: 1.5rem;
+          border-left: 1px solid var(--border);
+        `;
+        badge.innerHTML = `
+          <a href="auth.html" style="padding: 0.4rem 1rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); color:white; border-radius:6px; font-size:0.8rem; font-weight:600; text-decoration:none;">Sign In</a>
+        `;
+        navLinks.appendChild(badge);
+      }
+    }
+    
+    async function handleLogout() {
+      if (window.authService) {
+        await window.authService.logout();
+        window.location.reload();
+      }
+    }
+
     // Simple status check
     setInterval(() => {
       fetch("http://localhost:5000/data")

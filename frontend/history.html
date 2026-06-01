@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagnostic History - AirInsight</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Unique classes for History page */
+    .history-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-top: 1rem;
+    }
+    
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--primary);
+    }
+    
+    .stat-card-alert::before {
+      background: var(--error);
+    }
+    
+    .stat-card-healthy::before {
+      background: var(--success);
+    }
+    
+    .stat-num {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0.25rem 0;
+    }
+    
+    .stat-lbl {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      background: var(--surface);
+      padding: 1.2rem 1.5rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    
+    .search-input-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 250px;
+    }
+    
+    .search-input {
+      width: 100%;
+      padding: 0.75rem 1rem 0.75rem 2.5rem;
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
+    }
+    
+    .search-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+    
+    .filter-tabs {
+      display: flex;
+      background: var(--surface-light);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      gap: 4px;
+    }
+    
+    .filter-tab {
+      padding: 0.5rem 1.2rem;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .filter-tab.active {
+      background: var(--surface);
+      color: var(--primary);
+      border: 1px solid var(--border);
+    }
+    
+    .history-table-wrapper {
+      background: var(--surface);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    }
+    
+    .h-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    
+    .h-table th {
+      background: rgba(0, 0, 0, 0.25);
+      padding: 1.2rem 1.5rem;
+      font-weight: 600;
+      color: var(--text);
+      font-size: 0.9rem;
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .h-table td {
+      padding: 1.2rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      vertical-align: middle;
+    }
+    
+    .h-table tr {
+      transition: background-color 0.2s ease;
+    }
+    
+    .h-table tr:hover {
+      background: rgba(245, 158, 11, 0.03);
+    }
+    
+    .history-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .badge-healthy {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    
+    .badge-alert {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .btn-action {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .btn-action:hover {
+      background: var(--surface-light);
+      border-color: var(--text-secondary);
+    }
+    
+    .btn-delete {
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+    
+    .btn-delete:hover {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: var(--error);
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-secondary);
+    }
+    
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+    
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(9, 8, 7, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 10000;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      animation: fadeIn 0.25s ease;
+    }
+    
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 600px;
+      padding: 2.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+      position: relative;
+      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .modal-close {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+    
+    .modal-close:hover {
+      color: var(--text);
+    }
+    
+    .modal-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+    
+    .modal-section {
+      margin-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+    }
+    
+    .modal-section-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+    
+    .metric-bubble-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+    
+    .metric-bubble {
+      background: var(--surface-light);
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .metric-bubble-val {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav-dashboard">
+    <div class="nav-content">
+      <div class="nav-brand">AirInsight</div>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="graph.html">Sensor Dashboard</a>
+        <a href="detection.html">Health Dashboard</a>
+        <a href="history.html" class="active">History</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-container" style="padding-top: 100px;">
+    <div class="dashboard-header">
+      <h1>Diagnostic History</h1>
+      <p>Analyze trends and review past medical breath biomarkers</p>
+    </div>
+
+    <!-- User Check Container -->
+    <div id="authGuardMsg" class="card" style="text-align: center; padding: 4rem 2rem; display: none;">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
+      <h2>Authentication Required</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 2rem;">Please sign in to view your diagnostic breath analysis history logs.</p>
+      <a href="auth.html" style="display: inline-block; padding: 0.85rem 2rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">Sign In Now</a>
+    </div>
+
+    <div id="historyContent" style="display: none;">
+      <!-- Stats Summary cards -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-num" id="statTotal">0</div>
+          <div class="stat-lbl">Total Tests</div>
+        </div>
+        <div class="stat-card stat-card-healthy">
+          <div class="stat-num" id="statHealthy" style="color: #34d399;">0</div>
+          <div class="stat-lbl">Healthy Scans</div>
+        </div>
+        <div class="stat-card stat-card-alert">
+          <div class="stat-num" id="statAlert" style="color: #fca5a5;">0</div>
+          <div class="stat-lbl">Alerts Flagged</div>
+        </div>
+      </div>
+
+      <!-- Filter Controls Bar -->
+      <div class="filter-bar">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search by disease or keywords..." oninput="applyFilters()">
+        </div>
+        
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="setFilter('all', this)">All</button>
+          <button class="filter-tab" onclick="setFilter('healthy', this)">Healthy</button>
+          <button class="filter-tab" onclick="setFilter('alert', this)">Alerts</button>
+        </div>
+      </div>
+
+      <!-- Data Table card -->
+      <div class="history-table-wrapper">
+        <table class="h-table" id="historyTable">
+          <thead>
+            <tr>
+              <th>Date & Time</th>
+              <th>Status</th>
+              <th>Diagnostic Analysis</th>
+              <th>Sensor Averages</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="historyList">
+            <!-- Dynamic rows will be inserted here -->
+          </tbody>
+        </table>
+        
+        <div id="emptyState" class="empty-state" style="display: none;">
+          <div class="empty-icon">📂</div>
+          <h3 id="emptyTitle">No Records Found</h3>
+          <p id="emptyDesc">Take a breath test on the Health Dashboard to log your first scan!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Details Modal Overlay -->
+  <div class="modal-overlay" id="detailsModal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <h2 class="modal-title" id="mTitle">Breath Diagnostics</h2>
+      <div style="margin-bottom: 0.5rem;"><span id="mBadge" class="history-badge">Badge</span></div>
+      <p style="color: var(--text-secondary); font-size: 0.9rem;" id="mDate">Date here</p>
+      
+      <div class="modal-section">
+        <h4 class="modal-section-title">Raw Sensor Ratios (Rs/Ro)</h4>
+        <div class="metric-bubble-grid">
+          <div class="metric-bubble">
+            <span style="font-size:0.85rem;">MQ-2 (H₂/CH₄)</span>
+            <span class="metric-bubble-val" id="mMq2">0.00</span>
+          </div>
+          <div class="metric-bubble">
+            <span style="font-size:0.85rem;">MQ-3 (Acetone)</span>
+            <span class="metric-bubble-val" id="mMq3" style="color: #9a75ea;">0.00</span>
+          </div>
+          <div class="metric-bubble">
+            <span style="font-size:0.85rem;">MQ-7 (Carbon Monoxide)</span>
+            <span class="metric-bubble-val" id="mMq7" style="color: #fc814a;">0.00</span>
+          </div>
+          <div class="metric-bubble">
+            <span style="font-size:0.85rem;">MQ-135 (Ammonia/VOCs)</span>
+            <span class="metric-bubble-val" id="mMq135" style="color: #48bb78;">0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <h4 class="modal-section-title">Triggered Diagnostic Flags</h4>
+        <div id="mFlags" class="flags-list">
+          <!-- Flags will be injected here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Firebase services configuration -->
+  <script src="firebase-config.js"></script>
+  
+  <script>
+    let allRecords = [];
+    let currentFilter = 'all'; // all, healthy, alert
+    
+    window.addEventListener('DOMContentLoaded', () => {
+      // Small delay to ensure firebase configuration load has initiated
+      setTimeout(() => {
+        if (window.authService) {
+          window.authService.onAuthStateChanged(async (user) => {
+            const guard = document.getElementById("authGuardMsg");
+            const content = document.getElementById("historyContent");
+            
+            if (!user) {
+              guard.style.display = "block";
+              content.style.display = "none";
+              updateNavbarAuth(null);
+            } else {
+              guard.style.display = "none";
+              content.style.display = "block";
+              updateNavbarAuth(user);
+              await fetchHistory();
+            }
+          });
+        }
+      }, 50);
+    });
+    
+    // Updates the navbar with user information and log-out capability
+    function updateNavbarAuth(user) {
+      const navLinks = document.querySelector(".nav-links");
+      if (!navLinks) return;
+      
+      // Delete any existing auth controls first
+      const existingBadge = document.getElementById("nav-auth-profile");
+      if (existingBadge) existingBadge.remove();
+      
+      if (user) {
+        const email = user.email || "User";
+        const emailShort = email.length > 20 ? email.substring(0, 17) + "..." : email;
+        
+        const badge = document.createElement("div");
+        badge.id = "nav-auth-profile";
+        badge.style.cssText = `
+          display: flex;
+          align-items: center;
+          gap: 0.8rem;
+          margin-left: 1.5rem;
+          padding-left: 1.5rem;
+          border-left: 1px solid var(--border);
+        `;
+        badge.innerHTML = `
+          <span style="font-size:0.85rem; color:var(--text-secondary);">${emailShort}</span>
+          <button onclick="handleLogout()" style="background:transparent; border:1px solid rgba(239,68,68,0.4); color:#fca5a5; font-size:0.75rem; font-weight:600; padding:0.3rem 0.6rem; border-radius:4px; cursor:pointer; transition:all 0.2s;">Sign Out</button>
+        `;
+        navLinks.appendChild(badge);
+      } else {
+        const badge = document.createElement("div");
+        badge.id = "nav-auth-profile";
+        badge.style.cssText = `
+          margin-left: 1.5rem;
+          padding-left: 1.5rem;
+          border-left: 1px solid var(--border);
+        `;
+        badge.innerHTML = `
+          <a href="auth.html" style="padding: 0.4rem 1rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); color:white; border-radius:6px; font-size:0.8rem; font-weight:600; text-decoration:none;">Sign In</a>
+        `;
+        navLinks.appendChild(badge);
+      }
+    }
+    
+    async function handleLogout() {
+      if (window.authService) {
+        await window.authService.logout();
+        window.location.reload();
+      }
+    }
+    
+    async function fetchHistory() {
+      const listEl = document.getElementById("historyList");
+      listEl.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 3rem;"><span class="loading-spinner"></span><br><br>Retrieving records...</td></tr>`;
+      
+      try {
+        if (!window.dbService) {
+          throw new Error("Database is not loaded yet.");
+        }
+        
+        allRecords = await window.dbService.getHistory();
+        updateStats();
+        applyFilters();
+      } catch (err) {
+        console.error("Error fetching history:", err);
+        listEl.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 3rem; color: var(--error);">Failed to load history logs: ${err.message}</td></tr>`;
+      }
+    }
+    
+    function updateStats() {
+      document.getElementById("statTotal").textContent = allRecords.length;
+      
+      const healthy = allRecords.filter(r => r.status === 'healthy').length;
+      const alert = allRecords.filter(r => r.status === 'alert').length;
+      
+      document.getElementById("statHealthy").textContent = healthy;
+      document.getElementById("statAlert").textContent = alert;
+    }
+    
+    function setFilter(filterType, element) {
+      currentFilter = filterType;
+      
+      // Update tab styles
+      document.querySelectorAll(".filter-tab").forEach(tab => tab.classList.remove("active"));
+      element.classList.add("active");
+      
+      applyFilters();
+    }
+    
+    function applyFilters() {
+      const search = document.getElementById("searchInput").value.toLowerCase().trim();
+      const listEl = document.getElementById("historyList");
+      const emptyState = document.getElementById("emptyState");
+      const table = document.getElementById("historyTable");
+      
+      // Filter list
+      let filtered = allRecords;
+      
+      if (currentFilter === 'healthy') {
+        filtered = filtered.filter(r => r.status === 'healthy');
+      } else if (currentFilter === 'alert') {
+        filtered = filtered.filter(r => r.status === 'alert');
+      }
+      
+      if (search !== '') {
+        filtered = filtered.filter(r => {
+          const prediction = (r.prediction || '').toLowerCase();
+          const date = formatDate(r.timestamp).toLowerCase();
+          const flagMatches = r.flags ? r.flags.some(f => f.toLowerCase().includes(search)) : false;
+          return prediction.includes(search) || date.includes(search) || flagMatches;
+        });
+      }
+      
+      // Render
+      listEl.innerHTML = "";
+      
+      if (filtered.length === 0) {
+        table.style.display = "none";
+        emptyState.style.display = "block";
+        
+        if (allRecords.length === 0) {
+          document.getElementById("emptyTitle").textContent = "No Records Found";
+          document.getElementById("emptyDesc").textContent = "Perform a breath analysis scan on the Health Dashboard to log your first diagnostic history entry.";
+        } else {
+          document.getElementById("emptyTitle").textContent = "No Search Results";
+          document.getElementById("emptyDesc").textContent = "Try searching for a different keyword or resetting your filters.";
+        }
+        return;
+      }
+      
+      table.style.display = "table";
+      emptyState.style.display = "none";
+      
+      filtered.forEach(rec => {
+        const tr = document.createElement("tr");
+        
+        // Date
+        const tdDate = document.createElement("td");
+        tdDate.innerHTML = `<strong style="color:var(--text);">${formatDate(rec.timestamp)}</strong><br><span style="font-size:0.75rem;">${formatTime(rec.timestamp)}</span>`;
+        tr.appendChild(tdDate);
+        
+        // Status
+        const tdStatus = document.createElement("td");
+        const isHealthy = rec.status === 'healthy';
+        tdStatus.innerHTML = `<span class="history-badge ${isHealthy ? 'badge-healthy' : 'badge-alert'}">${isHealthy ? 'Healthy' : 'Alert'}</span>`;
+        tr.appendChild(tdStatus);
+        
+        // Diagnosis
+        const tdDiag = document.createElement("td");
+        tdDiag.innerHTML = `<span style="font-weight:600; color:var(--text);">${rec.prediction || 'No Disease Detected'}</span>`;
+        tr.appendChild(tdDiag);
+        
+        // Sensor summary
+        const tdSensors = document.createElement("td");
+        if (rec.values) {
+          tdSensors.innerHTML = `
+            <span style="font-size:0.8rem; display:block;">MQ-3 (Acetone): <strong>${(rec.values.mq3 || 0).toFixed(2)}</strong></span>
+            <span style="font-size:0.8rem; display:block; color:var(--text-secondary);">MQ-135 (Ammonia): <strong>${(rec.values.mq135 || 0).toFixed(2)}</strong></span>
+          `;
+        } else {
+          tdSensors.textContent = "N/A";
+        }
+        tr.appendChild(tdSensors);
+        
+        // Actions
+        const tdActions = document.createElement("td");
+        tdActions.style.textAlign = "right";
+        tdActions.innerHTML = `
+          <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <button class="btn-action" onclick="viewDetails('${rec.id}')">🔎 View</button>
+            <button class="btn-action btn-delete" onclick="deleteRecord('${rec.id}', event)">🗑️ Delete</button>
+          </div>
+        `;
+        tr.appendChild(tdActions);
+        
+        listEl.appendChild(tr);
+      });
+    }
+    
+    function formatDate(isoString) {
+      try {
+        const d = new Date(isoString);
+        return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      } catch (e) {
+        return "Unknown Date";
+      }
+    }
+    
+    function formatTime(isoString) {
+      try {
+        const d = new Date(isoString);
+        return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+      } catch (e) {
+        return "";
+      }
+    }
+    
+    function viewDetails(id) {
+      const rec = allRecords.find(r => r.id === id);
+      if (!rec) return;
+      
+      document.getElementById("mTitle").textContent = rec.prediction || "Breath Diagnostics";
+      
+      const badge = document.getElementById("mBadge");
+      const isHealthy = rec.status === 'healthy';
+      badge.textContent = isHealthy ? 'Healthy' : 'Alert';
+      badge.className = `history-badge ${isHealthy ? 'badge-healthy' : 'badge-alert'}`;
+      
+      document.getElementById("mDate").textContent = `${formatDate(rec.timestamp)} at ${formatTime(rec.timestamp)}`;
+      
+      if (rec.values) {
+        document.getElementById("mMq2").textContent = (rec.values.mq2 || 0).toFixed(2);
+        document.getElementById("mMq3").textContent = (rec.values.mq3 || 0).toFixed(2);
+        document.getElementById("mMq7").textContent = (rec.values.mq7 || 0).toFixed(2);
+        document.getElementById("mMq135").textContent = (rec.values.mq135 || 0).toFixed(2);
+      } else {
+        ['mMq2','mMq3','mMq7','mMq135'].forEach(elId => document.getElementById(elId).textContent = "N/A");
+      }
+      
+      const flagsEl = document.getElementById("mFlags");
+      flagsEl.innerHTML = "";
+      if (rec.flags && rec.flags.length > 0) {
+        rec.flags.forEach(flag => {
+          const item = document.createElement("span");
+          item.className = "flag-item";
+          item.textContent = flag;
+          flagsEl.appendChild(item);
+        });
+      } else {
+        flagsEl.innerHTML = "<span style='color:var(--text-secondary); font-size:0.9rem;'>No flags triggered. Analysis matches standard healthy baseline levels.</span>";
+      }
+      
+      document.getElementById("detailsModal").style.display = "flex";
+    }
+    
+    function closeModal() {
+      document.getElementById("detailsModal").style.display = "none";
+    }
+    
+    // Close modal on escape or clicking outside
+    window.addEventListener('click', (e) => {
+      const modal = document.getElementById("detailsModal");
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+    
+    async function deleteRecord(id, event) {
+      event.stopPropagation(); // Avoid triggering row click
+      
+      if (!confirm("Are you sure you want to delete this breath analysis history record? This action cannot be undone.")) {
+        return;
+      }
+      
+      try {
+        if (!window.dbService) throw new Error("Database service unavailable.");
+        await window.dbService.deleteRecord(id);
+        
+        // Remove locally and update UI
+        allRecords = allRecords.filter(r => r.id !== id);
+        updateStats();
+        applyFilters();
+      } catch (err) {
+        alert("Failed to delete record: " + err.message);
+      }
+    }
+  </script>
+</body>
+</html>

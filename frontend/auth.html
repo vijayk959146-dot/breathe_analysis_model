@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Authentication - AirInsight</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .auth-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: calc(100vh - 100px);
+      padding: 2rem 1rem;
+    }
+    
+    .auth-card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      backdrop-filter: blur(25px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3rem 2.5rem;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(245, 158, 11, 0.03);
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.4s ease, box-shadow 0.4s ease;
+    }
+    
+    .auth-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      opacity: 0.85;
+    }
+    
+    .auth-card:hover {
+      border-color: var(--border-active);
+      box-shadow: 0 35px 80px rgba(0, 0, 0, 0.6), 0 0 20px rgba(245, 158, 11, 0.05);
+    }
+    
+    .auth-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    
+    .auth-title {
+      font-size: 2.2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--text) 30%, var(--text-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    
+    .auth-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+    
+    .form-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    
+    .form-input {
+      width: 100%;
+      padding: 0.85rem 1.2rem;
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+    
+    .form-input:focus {
+      border-color: var(--primary);
+      background: rgba(9, 8, 7, 0.8);
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
+    }
+    
+    .auth-btn {
+      width: 100%;
+      padding: 0.9rem;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #090807;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 6px 16px rgba(245, 158, 11, 0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 2rem;
+    }
+    
+    .auth-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(245, 158, 11, 0.35);
+      opacity: 0.95;
+    }
+    
+    .auth-btn:active {
+      transform: translateY(0);
+    }
+    
+    .auth-btn:disabled {
+      background: #2e2621;
+      color: var(--text-secondary);
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+      opacity: 0.7;
+    }
+    
+    .auth-toggle {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    
+    .auth-toggle-link {
+      color: var(--secondary);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+    
+    .auth-toggle-link:hover {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+    
+    .error-alert {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--error);
+      color: #fca5a5;
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav-dashboard">
+    <div class="nav-content">
+      <div class="nav-brand">AirInsight</div>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="graph.html">Sensor Dashboard</a>
+        <a href="detection.html">Health Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="auth-container" style="padding-top: 100px;">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h2 id="pageTitle" class="auth-title">Sign In</h2>
+        <p id="pageSubtitle" class="auth-subtitle">Welcome back! Sign in to access your dashboard</p>
+      </div>
+
+      <div id="errorBox" class="error-alert"></div>
+
+      <form id="authForm" onsubmit="handleAuth(event)">
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address</label>
+          <input class="form-input" type="email" id="email" required placeholder="name@domain.com">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input class="form-input" type="password" id="password" required placeholder="••••••••" minlength="6">
+        </div>
+
+        <button type="submit" id="submitBtn" class="auth-btn">
+          <span>Sign In</span>
+          <span class="loading-spinner" style="display:none; width: 16px; height: 16px; border-width: 2px;"></span>
+        </button>
+      </form>
+
+      <div class="auth-toggle">
+        <span id="toggleText">Don't have an account?</span>
+        <a href="#" id="toggleLink" class="auth-toggle-link" onclick="toggleForm(event)">Create one</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Firebase single config script first -->
+  <script src="firebase-config.js"></script>
+  
+  <script>
+    let isRegisterMode = false;
+    
+    // Check if user already logged in. If yes, redirect to home.
+    window.addEventListener('DOMContentLoaded', () => {
+      // Small buffer to let the configuration resolve
+      setTimeout(() => {
+        if (window.authService) {
+          window.authService.onAuthStateChanged((user) => {
+            if (user) {
+              console.log("User is already logged in, redirecting home...");
+              window.location.href = "index.html";
+            }
+          });
+        }
+      }, 50);
+    });
+
+    function toggleForm(e) {
+      e.preventDefault();
+      isRegisterMode = !isRegisterMode;
+      
+      const pageTitle = document.getElementById("pageTitle");
+      const pageSubtitle = document.getElementById("pageSubtitle");
+      const submitBtn = document.getElementById("submitBtn").querySelector("span:first-child");
+      const toggleText = document.getElementById("toggleText");
+      const toggleLink = document.getElementById("toggleLink");
+      const errorBox = document.getElementById("errorBox");
+      
+      errorBox.style.display = "none";
+      
+      if (isRegisterMode) {
+        pageTitle.textContent = "Create Account";
+        pageSubtitle.textContent = "Sign up to track and analyze your breath diagnostics";
+        submitBtn.textContent = "Register";
+        toggleText.textContent = "Already have an account?";
+        toggleLink.textContent = "Sign in";
+      } else {
+        pageTitle.textContent = "Sign In";
+        pageSubtitle.textContent = "Welcome back! Sign in to access your dashboard";
+        submitBtn.textContent = "Sign In";
+        toggleText.textContent = "Don't have an account?";
+        toggleLink.textContent = "Create one";
+      }
+    }
+
+    async function handleAuth(e) {
+      e.preventDefault();
+      
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const submitBtn = document.getElementById("submitBtn");
+      const spinner = submitBtn.querySelector(".loading-spinner");
+      const textSpan = submitBtn.querySelector("span:first-child");
+      const errorBox = document.getElementById("errorBox");
+      
+      // Reset UI state
+      errorBox.style.display = "none";
+      submitBtn.disabled = true;
+      spinner.style.display = "inline-block";
+      textSpan.style.opacity = "0.7";
+      
+      try {
+        if (!window.authService) {
+          throw new Error("Auth service is currently initializing. Please try again.");
+        }
+        
+        if (isRegisterMode) {
+          await window.authService.register(email, password);
+          console.log("Registration successful");
+        } else {
+          await window.authService.login(email, password);
+          console.log("Login successful");
+        }
+        
+        // Redirect will be handled by the authStateChanged listener above
+      } catch (err) {
+        console.error(err);
+        errorBox.textContent = err.message || "An unexpected authentication error occurred.";
+        errorBox.style.display = "block";
+        
+        // Reset button
+        submitBtn.disabled = false;
+        spinner.style.display = "none";
+        textSpan.style.opacity = "1";
+      }
+    }
+  </script>
+</body>
+</html>
