@@ -645,9 +645,13 @@
         // Sensor summary
         const tdSensors = document.createElement("td");
         if (rec.values) {
+          const mq3Ratio = rec.values.mq3 || 0;
+          const mq135Ratio = rec.values.mq135 || 0;
+          const mq3Ppm = rec.values.ppm_mq3 || (0.5 * (mq3Ratio ** 1.8));
+          const mq135Ppm = rec.values.ppm_mq135 || (0.8 * (mq135Ratio ** 2.1));
           tdSensors.innerHTML = `
-            <span style="font-size:0.8rem; display:block;">MQ-3 (Acetone): <strong>${(rec.values.mq3 || 0).toFixed(2)}</strong></span>
-            <span style="font-size:0.8rem; display:block; color:var(--text-secondary);">MQ-135 (Ammonia): <strong>${(rec.values.mq135 || 0).toFixed(2)}</strong></span>
+            <span style="font-size:0.8rem; display:block;">MQ-3: <strong>${mq3Ratio.toFixed(2)}</strong> <span style="color:var(--text-secondary);">(${mq3Ppm.toFixed(2)} PPM)</span></span>
+            <span style="font-size:0.8rem; display:block; color:var(--text-secondary);">MQ-135: <strong>${mq135Ratio.toFixed(2)}</strong> <span>(${mq135Ppm.toFixed(2)} PPM)</span></span>
           `;
         } else {
           tdSensors.textContent = "N/A";
@@ -701,10 +705,20 @@
       document.getElementById("mDate").textContent = `${formatDate(rec.timestamp)} at ${formatTime(rec.timestamp)}`;
       
       if (rec.values) {
-        document.getElementById("mMq2").textContent = (rec.values.mq2 || 0).toFixed(2);
-        document.getElementById("mMq3").textContent = (rec.values.mq3 || 0).toFixed(2);
-        document.getElementById("mMq7").textContent = (rec.values.mq7 || 0).toFixed(2);
-        document.getElementById("mMq135").textContent = (rec.values.mq135 || 0).toFixed(2);
+        const mq2R = rec.values.mq2 || 0;
+        const mq3R = rec.values.mq3 || 0;
+        const mq7R = rec.values.mq7 || 0;
+        const mq135R = rec.values.mq135 || 0;
+        
+        const mq2P = rec.values.ppm_mq2 || (1.0 * (mq2R ** 2.3));
+        const mq3P = rec.values.ppm_mq3 || (0.5 * (mq3R ** 1.8));
+        const mq7P = rec.values.ppm_mq7 || (1.2 * (mq7R ** 1.6));
+        const mq135P = rec.values.ppm_mq135 || (0.8 * (mq135R ** 2.1));
+
+        document.getElementById("mMq2").innerHTML = `${mq2R.toFixed(2)} <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:400; margin-left:0.3rem;">(${mq2P.toFixed(2)} PPM)</span>`;
+        document.getElementById("mMq3").innerHTML = `${mq3R.toFixed(2)} <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:400; margin-left:0.3rem;">(${mq3P.toFixed(2)} PPM)</span>`;
+        document.getElementById("mMq7").innerHTML = `${mq7R.toFixed(2)} <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:400; margin-left:0.3rem;">(${mq7P.toFixed(2)} PPM)</span>`;
+        document.getElementById("mMq135").innerHTML = `${mq135R.toFixed(2)} <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:400; margin-left:0.3rem;">(${mq135P.toFixed(2)} PPM)</span>`;
       } else {
         ['mMq2','mMq3','mMq7','mMq135'].forEach(elId => document.getElementById(elId).textContent = "N/A");
       }

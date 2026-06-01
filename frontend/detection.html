@@ -65,6 +65,101 @@
       transition: .3s;
       border-radius: 50%;
     }
+
+    /* Advanced Guided Breathing UI Styles */
+    .step-indicator {
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      opacity: 0.35;
+      padding-bottom: 4px;
+      border-bottom: 2px solid transparent;
+    }
+    .active-step {
+      opacity: 1 !important;
+      color: var(--primary) !important;
+      border-bottom-color: var(--primary) !important;
+      text-shadow: 0 0 10px rgba(245,158,11,0.25);
+    }
+    
+    .breathing-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.35) 0%, rgba(244, 63, 94, 0.05) 75%);
+      box-shadow: 0 0 30px rgba(245, 158, 11, 0.2);
+      margin: 2rem auto;
+      animation: chestBreathe 5s ease-in-out infinite;
+    }
+    @keyframes chestBreathe {
+      0%, 100% { transform: scale(1.0); opacity: 0.5; }
+      50% { transform: scale(1.65); opacity: 1; box-shadow: 0 0 50px rgba(244,63,94,0.45); }
+    }
+
+    .loading-ring {
+      display: inline-block;
+      width: 70px;
+      height: 70px;
+      border: 3.5px solid rgba(255,255,255,0.03);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      border-bottom-color: var(--secondary);
+      animation: loaderSpin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    }
+    @keyframes loaderSpin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .premium-btn {
+      width: 100%;
+      padding: 0.95rem;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #090807;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.18);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .premium-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(245, 158, 11, 0.35);
+    }
+    .premium-btn:disabled {
+      opacity: 0.35 !important;
+      cursor: not-allowed !important;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .wizard-stage {
+      animation: wizardFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      width: 100%;
+    }
+    @keyframes wizardFade {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .recommendation-card {
+      background: rgba(244, 63, 94, 0.05);
+      border: 1px solid rgba(244, 63, 94, 0.15);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-top: 1.2rem;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      animation: wizardFade 0.4s ease-out;
+    }
+    .recommendation-title {
+      font-weight: 700;
+      color: #fca5a5;
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
   </style>
 </head>
 <body>
@@ -87,24 +182,69 @@
     </div>
 
     <div class="dashboard-grid">
-      <!-- Disease Prediction Card -->
+      <!-- Interactive Breathing Wizard Card -->
       <div class="card">
         <div class="card-header">
-          <div class="card-icon">🔍</div>
-          <h3 class="card-title">Disease Detection Result</h3>
+          <div class="card-icon">🫁</div>
+          <h3 class="card-title">Guided Breath Analyzer</h3>
         </div>
-        <div id="sensorStatus" class="status-indicator status-disconnected">
+        <div id="sensorStatus" class="status-indicator status-disconnected" style="margin-bottom: 1.2rem;">
           <span class="loading-spinner"></span>
           Waiting for sensor data...
         </div>
-        
-        <button id="detectBtn" style="width: 100%; padding: 1rem; margin: 1rem 0; border: none; border-radius: 12px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #090807; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, opacity 0.3s ease; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.25);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 12px 28px rgba(245, 158, 11, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 24px rgba(245, 158, 11, 0.25)'">
-          Analyze Breath Sample
-        </button>
 
-        <div id="resultBox" class="result-box result-waiting">
-          <div class="result-icon">🔬</div>
-          <div id="prediction">Ready for Analysis...</div>
+        <!-- Wizard Progress Steps Tracker -->
+        <div class="wizard-steps" style="display: flex; justify-content: space-between; margin-bottom: 1.8rem; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">
+          <span class="step-indicator active-step" id="step1-lbl">1. Stable</span>
+          <span class="step-indicator" id="step2-lbl">2. Inhale</span>
+          <span class="step-indicator" id="step3-lbl">3. Exhale</span>
+          <span class="step-indicator" id="step4-lbl">4. Process</span>
+          <span class="step-indicator" id="step5-lbl">5. Result</span>
+        </div>
+
+        <!-- Wizard Main Panel -->
+        <div id="wizardPanel" style="min-height: 250px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+          <!-- Stage 1: Stabilizing baseline / Ready -->
+          <div id="stage-calibration" class="wizard-stage">
+            <div style="font-size: 3.2rem; margin-bottom: 1rem; animation: pulse 2.5s infinite;">📡</div>
+            <h4 style="font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--text); font-weight:600;">Baseline Air Calibration</h4>
+            <p style="color: var(--text-secondary); max-width: 320px; font-size: 0.9rem; margin-bottom: 1.5rem; line-height:1.5;">The electronic nose is calibrating sensor heaters and monitoring clean ambient air baseline quality.</p>
+            <button id="startScanBtn" class="premium-btn" disabled>Begin Breathing Session</button>
+          </div>
+
+          <!-- Stage 2: Deep Inhalation -->
+          <div id="stage-inhale" class="wizard-stage" style="display: none;">
+            <div class="breathing-circle"></div>
+            <h4 style="font-size: 1.4rem; margin-bottom: 0.5rem; color: var(--primary); font-weight:700; letter-spacing: -0.2px;">Inhale Deeply...</h4>
+            <p style="color: var(--text-secondary); max-width: 300px; font-size: 0.9rem; line-height:1.5;" id="inhaleTimer">Preparing lungs in 5 seconds</p>
+          </div>
+
+          <!-- Stage 3: Controlled Exhalation -->
+          <div id="stage-exhale" class="wizard-stage" style="display: none;">
+            <div style="font-size: 4rem; margin-bottom: 1rem; animation: chestBreathe 4s infinite;">💨</div>
+            <h4 style="font-size: 1.35rem; margin-bottom: 0.5rem; color: var(--secondary); font-weight:700;">Exhale Steadily & Slow</h4>
+            <p style="color: var(--text-secondary); max-width: 320px; font-size: 0.9rem; margin-bottom: 1.2rem; line-height:1.5;">Blow continuously onto the sensor grid at a uniform, slow rate.</p>
+            <div class="progress-bar-container" style="width: 250px; height: 10px; background: rgba(255,255,255,0.03); border-radius: 6px; overflow: hidden; border: 1px solid var(--border); margin: 0.5rem auto;">
+              <div id="exhaleProgress" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); transition: width 1s linear;"></div>
+            </div>
+            <span id="exhaleTime" style="font-size: 1.15rem; font-weight: 700; color: var(--text); display:block; margin-top:0.5rem;">10s remaining</span>
+          </div>
+
+          <!-- Stage 4: AI Analysis -->
+          <div id="stage-processing" class="wizard-stage" style="display: none;">
+            <div class="loading-ring" style="margin-bottom: 1rem;"></div>
+            <h4 style="font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--text); font-weight:600;">AI Feature Processing</h4>
+            <p style="color: var(--text-secondary); max-width: 320px; font-size: 0.9rem; line-height:1.5;">Extracting baseline ratios, building relative proportions, and running Random Forest classifiers...</p>
+          </div>
+
+          <!-- Stage 5: Result Report -->
+          <div id="stage-report" class="wizard-stage" style="display: none; width: 100%;">
+            <div id="resultBox" class="result-box result-waiting">
+              <div class="result-icon">🔬</div>
+              <div id="prediction">Ready for Analysis...</div>
+            </div>
+            <button id="resetWizardBtn" class="premium-btn" style="margin-top: 1.5rem;">Test Another Sample</button>
+          </div>
         </div>
 
         <!-- Cloud Sync Toggle -->

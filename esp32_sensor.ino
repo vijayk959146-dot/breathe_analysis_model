@@ -48,32 +48,38 @@ void setup() {
   Serial.println("\n=== ESP32 Breath Sensor Starting ===");
   Serial.println("Server: " + String(serverName));
 
-  // Connect WiFi
+  // Connect WiFi with watchdog
   Serial.print("Connecting to WiFi: ");
   Serial.println(ssid);
   WiFi.begin(ssid, password);
   int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 30) {
+  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
     delay(1000);
     Serial.print(".");
     attempts++;
   }
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\nWiFi Connected!");
+    Serial.println("\nWiFi Connected successfully!");
     Serial.print("ESP32 IP: "); Serial.println(WiFi.localIP());
   } else {
-    Serial.println("\nWiFi Failed! Check SSID/Password.");
+    Serial.println("\nWARNING: WiFi initial connection timed out. Will attempt background reconnection in loop().");
   }
 
   // Sensor Warm-up (60 seconds for MQ sensors to stabilize)
-  Serial.println("\n--- Warming up sensors 60 seconds (DO NOT BREATHE YET) ---");
+  Serial.println("\n--- Warming up sensors 60 seconds (DO NOT BREATHE ON SENSORS YET) ---");
   for (int i = 60; i > 0; i--) {
     if (i % 10 == 0) {
       float r2 = getStableRaw(MQ2_PIN, 5);
       float r3 = getStableRaw(MQ3_PIN, 5);
       float r7 = getStableRaw(MQ7_PIN, 5);
       float r135 = getStableRaw(MQ135_PIN, 5);
-      Serial.printf("%ds remaining | RAW: MQ2=%.0f MQ3=%.0f MQ7=%.0f MQ135=%.0f\n",
+      
+      // Warn if sensors are reading extremely low values (< 200), likely disconnected
+      if (r2 < 200 || r3 < 200 || r7 < 200 || r135 < 200) {
+        Serial.println("  [DIAGNOSTIC WARNING]: Suspiciously low raw ADC values. Verify sensor connections.");
+      }
+      
+      Serial.printf("  Warmup: %ds remaining | RAW ADC -> MQ2:%.0f MQ3:%.0f MQ7:%.0f MQ135:%.0f\n",
                     i, r2, r3, r7, r135);
     }
     delay(1000);
@@ -81,7 +87,8 @@ void setup() {
   Serial.println();
 
   // Auto-calibrate baseline AFTER proper warmup
-  Serial.println("--- Calibrating Baseline in CLEAN AIR ---");
+  Serial.println("=== Calibrating Baselines in CLEAN AIR (Do not blow) ===");
+  delay(1000);
   Base_mq2   = getStableRaw(MQ2_PIN,   100);
   Base_mq3   = getStableRaw(MQ3_PIN,   100);
   Base_mq7   = getStableRaw(MQ7_PIN,   100);
@@ -91,7 +98,7 @@ void setup() {
   // the sensor is likely disconnected — use safe default
   auto safeguard = [](float &base, const char* name) {
     if (base < 500.0f || base > 4090.0f) {
-      Serial.printf("WARNING: %s baseline %.0f is invalid (sensor disconnected?). Using default 2457.\n", name, base);
+      Serial.printf("  [SAFEGUARD]: %s baseline %.0f is invalid (sensor disconnected?). Using default 2457.\n", name, base);
       base = 2457.0f;
     }
   };
@@ -100,62 +107,112 @@ void setup() {
   safeguard(Base_mq7,   "MQ7");
   safeguard(Base_mq135, "MQ135");
 
-  Serial.println("Calibration complete. Final Baselines:");
-  Serial.printf("MQ2=%.0f  MQ3=%.0f  MQ7=%.0f  MQ135=%.0f\n\n",
+  Serial.println("Baseline calibration complete!");
+  Serial.printf("Final Ro Baselines -> MQ2:%.0f  MQ3:%.0f  MQ7:%.0f  MQ135:%.0f\n",
                 Base_mq2, Base_mq3, Base_mq7, Base_mq135);
+  Serial.println("=========================================================");
+  Serial.println("SYSTEM READY: Take a breath scan on your web dashboard.");
+  Serial.println("=========================================================\n");
 }
 
-void loop() {
-  Serial.println("\n--- Reading Sensors ---");
+bool inCoachingSession = false;
 
+void loop() {
+  // 1. Maintain WiFi connection
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi lost. Reconnecting...");
-    WiFi.reconnect();
-    delay(3000);
-    if (WiFi.status() != WL_CONNECTED) return;
+    Serial.println("[WIFI WATCHDOG]: Connection lost! Reconnecting...");
+    WiFi.disconnect();
+    WiFi.begin(ssid, password);
+    int retries = 0;
+    while (WiFi.status() != WL_CONNECTED && retries < 5) {
+      delay(1000);
+      Serial.print(".");
+      retries++;
+    }
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("\nWiFi Reconnected!");
+    } else {
+      Serial.println("\nWiFi Reconnection deferred. Operating offline.");
+    }
   }
 
-  // 1. Read raw ADC
+  // 2. Read live sensor values
   float raw_mq2   = getStableRaw(MQ2_PIN);
   float raw_mq3   = getStableRaw(MQ3_PIN);
   float raw_mq7   = getStableRaw(MQ7_PIN);
   float raw_mq135 = getStableRaw(MQ135_PIN);
 
-  Serial.printf("RAW ADC  -> MQ2:%.0f  MQ3:%.0f  MQ7:%.0f  MQ135:%.0f\n",
-                raw_mq2, raw_mq3, raw_mq7, raw_mq135);
-
-  // 2. Ratio = Raw / Baseline  (clean air = 1.0)
+  // Calculate Ratios (Rs/Ro equivalent: Raw / Baseline)
   float ratio_mq2   = raw_mq2   / Base_mq2;
   float ratio_mq3   = raw_mq3   / Base_mq3;
   float ratio_mq7   = raw_mq7   / Base_mq7;
   float ratio_mq135 = raw_mq135 / Base_mq135;
 
-  // 3. Clamp to reasonable range — max 20.0 to detect extreme readings
+  // Clamp to reasonable ranges [0.0, 20.0]
   ratio_mq2   = constrain(ratio_mq2,   0.0f, 20.0f);
   ratio_mq3   = constrain(ratio_mq3,   0.0f, 20.0f);
   ratio_mq7   = constrain(ratio_mq7,   0.0f, 20.0f);
   ratio_mq135 = constrain(ratio_mq135, 0.0f, 20.0f);
 
-  Serial.printf("RATIOS   -> MQ2:%.2f  MQ3:%.2f  MQ7:%.2f  MQ135:%.2f\n",
+  // 3. Automated Breath Coach Trigger
+  // A standard breath blow triggers a noticeable spike (e.g. Ratio > 1.25) on MQ-3/MQ-135/MQ-2
+  bool isBlowing = (ratio_mq2 > 1.25 || ratio_mq3 > 1.25 || ratio_mq135 > 1.25);
+  
+  if (isBlowing && !inCoachingSession) {
+    inCoachingSession = true;
+    Serial.println("\n=========================================================");
+    Serial.println("  [BREATH COACH]: Breath detected! Starting capture... ");
+    Serial.println("  ==> INHALE DEEPLY & EXHALE SLOWLY & STEADILY ONTO SENSORS");
+    Serial.println("=========================================================");
+    
+    // 8-second countdown for stabilized breathing exposure
+    for (int countdown = 8; countdown > 0; countdown--) {
+      Serial.printf("  [Capturing Peak Biomarkers]: %ds remaining...\n", countdown);
+      delay(1000);
+    }
+    
+    // Take final peak samples
+    raw_mq2   = getStableRaw(MQ2_PIN);
+    raw_mq3   = getStableRaw(MQ3_PIN);
+    raw_mq7   = getStableRaw(MQ7_PIN);
+    raw_mq135 = getStableRaw(MQ135_PIN);
+    
+    ratio_mq2   = constrain(raw_mq2   / Base_mq2,   0.0f, 20.0f);
+    ratio_mq3   = constrain(raw_mq3   / Base_mq3,   0.0f, 20.0f);
+    ratio_mq7   = constrain(raw_mq7   / Base_mq7,   0.0f, 20.0f);
+    ratio_mq135 = constrain(raw_mq135 / Base_mq135, 0.0f, 20.0f);
+
+    Serial.println("\n  [BREATH COACH]: Capture complete! Sending peak data to server.");
+    Serial.println("  ==> Please step back from the device to allow sensors to purge.\n");
+  } else if (!isBlowing && inCoachingSession) {
+    // Reset coaching session when sensors drop back near baseline
+    inCoachingSession = false;
+    Serial.println("  [BREATH COACH]: Sensors purged. Ready for next breath scan.");
+  }
+
+  // 4. Output values to serial
+  Serial.printf("LIVE RATIOS -> MQ2:%.2f  MQ3:%.2f  MQ7:%.2f  MQ135:%.2f\n",
                 ratio_mq2, ratio_mq3, ratio_mq7, ratio_mq135);
 
-  // 4. Build JSON payload
-  String jsonPayload = "{\"mq2\":"    + String(ratio_mq2,   2) +
-                       ",\"mq3\":"   + String(ratio_mq3,   2) +
-                       ",\"mq7\":"   + String(ratio_mq7,   2) +
-                       ",\"mq135\":" + String(ratio_mq135, 2) + "}";
+  // 5. Build and send JSON payload if connected
+  if (WiFi.status() == WL_CONNECTED) {
+    String jsonPayload = "{\"mq2\":"    + String(ratio_mq2,   2) +
+                         ",\"mq3\":"   + String(ratio_mq3,   2) +
+                         ",\"mq7\":"   + String(ratio_mq7,   2) +
+                         ",\"mq135\":" + String(ratio_mq135, 2) + "}";
 
-  // 5. POST to Flask backend
-  HTTPClient http;
-  http.begin(serverName);
-  http.addHeader("Content-Type", "application/json");
-  int code = http.POST(jsonPayload);
-  if (code > 0) {
-    Serial.println("Sent OK -> " + jsonPayload);
-  } else {
-    Serial.println("HTTP Error: " + String(code));
+    HTTPClient http;
+    http.begin(serverName);
+    http.addHeader("Content-Type", "application/json");
+    int code = http.POST(jsonPayload);
+    if (code > 0) {
+      Serial.println("  Data streamed -> " + jsonPayload);
+    } else {
+      Serial.println("  HTTP Error: " + String(code));
+    }
+    http.end();
   }
-  http.end();
 
+  // Check every 3 seconds
   delay(3000);
 }
