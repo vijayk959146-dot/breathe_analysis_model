@@ -8,7 +8,7 @@
 // ==========================================
 const char* ssid = "vijayvivo";
 const char* password = "123456789";
-const char* serverName = "http://192.168.137.1:5000/sensor_data";
+const char* serverName = "http://10.238.149.66:5000/sensor_data";
 
 // MQ sensor pins (analog)
 #define MQ2_PIN 35   // MQ-2 connected to GPIO 35
@@ -146,7 +146,7 @@ void loop() {
                        ",\"mq135\":" + String(ratio_mq135, 2) + "}";
 
   // --- DEBUG: Raw TCP test ---
-  String serverIP   = "192.168.137.1";
+  String serverIP   = "10.238.149.66";
   const uint16_t port = 5000;
   WiFiClient tcpClient;
   Serial.print("[DEBUG] TCP to ");
