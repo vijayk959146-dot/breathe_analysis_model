@@ -83,65 +83,75 @@ def get_prediction():
     }
 
     # =========================================================
-    # Disease Flags — Rs/Ro Ratio & PPM Thresholds
-    # Grounded in scientific breath biomarkers literature
+    # Disease Flags — Differential Ratio Analysis
     # =========================================================
     flags = []
 
-    # --- HUMIDITY / HEAVY BREATH FILTER USING RELATIVE PROPORTIONS ---
-    # When a user blows heavily, near 100% humidity causes all sensors to spike together.
-    # If the relative distribution is extremely uniform (no single gas dominates),
-    # it is parsed as a normal humid breath and common-mode signal is mathematically compensated/purged.
     total_ratio = mq2 + mq3 + mq7 + mq135
-    if total_ratio > 0:
-        props = [mq2/total_ratio, mq3/total_ratio, mq7/total_ratio, mq135/total_ratio]
-        max_prop = max(props)
-        if mq2 >= 1.5 and mq3 >= 1.5 and mq7 >= 1.5 and mq135 >= 1.5 and max_prop < 0.35:
-            return jsonify({
-                "prediction": "No Disease Detected",
-                "values": latest_values,
-                "flags": ["Note: Breath moisture detected. Common-mode humidity signal mathematically purged successfully."],
-                "status": "healthy"
-            })
+    if total_ratio == 0:
+        total_ratio = 4.0
+    
+    prop2 = mq2 / total_ratio
+    prop3 = mq3 / total_ratio
+    prop7 = mq7 / total_ratio
+    prop135 = mq135 / total_ratio
+    max_prop = max(prop2, prop3, prop7, prop135)
 
-    # 1. Diabetes — Acetone (MQ-3 ratio 4.50 - 6.00, ppm > 1.8)
-    if mq3 >= 4.5 and mq3 < 6.0:
-        flags.append("Diabetes Risk — Elevated Acetone (MQ-3 Ratio: {:.2f}, PPM: {:.2f})".format(mq3, ppm_mq3))
+    # --- BASELINE NORMAL BREATH FILTER ---
+    # Normal breath without disease biomarkers shouldn't exceed 3.5 on any sensor
+    if max(mq2, mq3, mq7, mq135) < 3.5:
+        return jsonify({
+            "prediction": "No Disease Detected",
+            "values": latest_values,
+            "flags": ["Normal breath detected. No significant gas spikes."],
+            "status": "healthy"
+        })
 
-    # 2. Chronic Kidney Disease — Ammonia (MQ-135 ratio 4.50 - 6.50, ppm > 1.5)
-    if mq135 >= 4.5 and mq135 < 6.5:
-        flags.append("Chronic Kidney Disease Risk — Elevated Ammonia (MQ-135 Ratio: {:.2f}, PPM: {:.2f})".format(mq135, ppm_mq135))
+    # --- HUMIDITY / HEAVY BREATH FILTER USING RELATIVE PROPORTIONS ---
+    # A true disease biomarker will dominate the total signal.
+    # If no gas exceeds 40% (0.40) of the total, it is a uniform spike caused by humidity/CO2.
+    if max_prop < 0.40:
+        return jsonify({
+            "prediction": "No Disease Detected",
+            "values": latest_values,
+            "flags": ["Note: Breath moisture detected. Common-mode humidity signal mathematically purged successfully."],
+            "status": "healthy"
+        })
 
-    # 3. Liver Cirrhosis — Acetaldehyde + Ammonia both significantly elevated
-    if mq3 >= 3.5 and mq3 < 4.5 and mq135 >= 3.5 and mq135 < 4.5:
-        flags.append("Liver Cirrhosis Risk — Acetaldehyde (MQ-3 Ratio: {:.2f}) + Ammonia (MQ-135 Ratio: {:.2f}) both elevated".format(mq3, mq135))
+    # 1. Diabetes — Acetone (MQ-3 dominant and high)
+    if prop3 >= 0.40 and mq3 >= 4.5 and mq3 < 6.5:
+        flags.append("Diabetes Risk — Elevated Acetone (MQ-3 Dominance: {:.1f}%, PPM: {:.2f})".format(prop3*100, ppm_mq3))
 
-    # 4. Alcohol Consumption — Massive Acetaldehyde/Ethanol spike (MQ-3 ratio >= 6.50)
-    if mq3 >= 6.5:
-        flags.append("Alcohol Consumption Detected — MQ-3 Ethanol/Acetaldehyde Ratio: {:.2f} (PPM: {:.2f})".format(mq3, ppm_mq3))
+    # 2. Chronic Kidney Disease — Ammonia (MQ-135 dominant and high)
+    if prop135 >= 0.40 and mq135 >= 4.5 and mq135 < 6.5:
+        flags.append("Chronic Kidney Disease Risk — Elevated Ammonia (MQ-135 Dominance: {:.1f}%, PPM: {:.2f})".format(prop135*100, ppm_mq135))
 
-    # 5. Gastrointestinal Disease — Hydrogen & Methane (MQ-2 ratio >= 4.00)
-    if mq2 >= 4.0:
-        flags.append("Gastrointestinal Disease Risk (SIBO) — MQ-2 H2/CH4 Ratio: {:.2f} (PPM: {:.2f})".format(mq2, ppm_mq2))
+    # 3. Liver Cirrhosis — Acetaldehyde + Ammonia (Both moderately dominant)
+    if prop3 >= 0.30 and prop135 >= 0.30 and mq3 >= 3.5 and mq135 >= 3.5:
+        flags.append("Liver Cirrhosis Risk — Acetaldehyde + Ammonia both significantly elevated")
 
-    # 6. Asthma — NOx / H2S trace on MQ-135 (ratio 3.20 - 4.20)
-    if mq135 >= 3.2 and mq135 < 4.2:
-        flags.append("Asthma Risk — MQ-135 NOx/H2S Trace (Ratio: {:.2f}, PPM: {:.2f})".format(mq135, ppm_mq135))
+    # 4. Alcohol Consumption — Massive Acetaldehyde/Ethanol spike
+    if prop3 >= 0.40 and mq3 >= 6.5:
+        flags.append("Alcohol Consumption Detected — MQ-3 Ethanol Ratio: {:.2f} (PPM: {:.2f})".format(mq3, ppm_mq3))
 
-    # 7. Lung Cancer — Aldehydes on MQ-3 (ratio 3.80 - 4.50)
-    if mq3 >= 3.8 and mq3 < 4.5 and mq135 < 3.5:
-        flags.append("Lung Cancer Risk — Moderately Elevated Aldehydes (MQ-3 Ratio: {:.2f}, PPM: {:.2f})".format(mq3, ppm_mq3))
+    # 5. Gastrointestinal Disease — Hydrogen & Methane (MQ-2 dominant)
+    if prop2 >= 0.38 and mq2 >= 4.0:
+        flags.append("Gastrointestinal Disease Risk (SIBO) — MQ-2 Dominance: {:.1f}% (PPM: {:.2f})".format(prop2*100, ppm_mq2))
 
-    # 8. Alzheimer — Low-level Aldehydes on MQ-3 (ratio 3.10 - 3.60)
-    if mq3 >= 3.1 and mq3 < 3.6 and mq135 < 3.5:
-        flags.append("Alzheimer Risk — Low-level Aldehydes (MQ-3 Ratio: {:.2f}, PPM: {:.2f})".format(mq3, ppm_mq3))
+    # 6. Asthma — NOx / H2S trace on MQ-135
+    if prop135 >= 0.38 and mq135 >= 3.8 and mq135 < 4.5:
+        flags.append("Asthma Risk — MQ-135 Trace Dominance: {:.1f}% (PPM: {:.2f})".format(prop135*100, ppm_mq135))
 
-    # 9. COPD — Carbon Monoxide (MQ-7 ratio 4.00 - 7.00)
-    if mq7 >= 4.0:
-        flags.append("COPD Risk — Carbon Monoxide (MQ-7 Ratio: {:.2f}, PPM: {:.2f})".format(mq7, ppm_mq7))
+    # 7. Lung Cancer — Aldehydes on MQ-3
+    if prop3 >= 0.38 and mq3 >= 3.8 and mq3 < 4.5:
+        flags.append("Lung Cancer Risk — Moderately Elevated Aldehydes (MQ-3 Dominance: {:.1f}%, PPM: {:.2f})".format(prop3*100, ppm_mq3))
 
-    # 10. Severe Risk — Extreme Ammonia (MQ-135 >= 6.5)
-    if mq135 >= 6.5:
+    # 8. COPD — Carbon Monoxide (MQ-7 dominant)
+    if prop7 >= 0.38 and mq7 >= 4.0:
+        flags.append("COPD Risk — Carbon Monoxide (MQ-7 Dominance: {:.1f}%, PPM: {:.2f})".format(prop7*100, ppm_mq7))
+
+    # 9. Severe Risk — Extreme Ammonia (MQ-135 >= 6.5)
+    if prop135 >= 0.40 and mq135 >= 6.5:
         flags.append("Severe Liver/Kidney Disease Risk — Severe Ammonia (MQ-135 Ratio: {:.2f}, PPM: {:.2f})".format(mq135, ppm_mq135))
 
     # If no flags triggered, return healthy
@@ -156,24 +166,26 @@ def get_prediction():
     # =========================================================
     # ML Prediction (Random Forest using Scaled 8-Feature Vector)
     # =========================================================
-    total = mq2 + mq3 + mq7 + mq135
-    if total == 0:
-        total = 4.0
     features_raw = np.array([[
         mq2, mq3, mq7, mq135,
-        mq2 / total, mq3 / total, mq7 / total, mq135 / total
+        prop2, prop3, prop7, prop135
     ]])
     features     = scaler.transform(features_raw)
     prediction   = model.predict(features)[0]
 
-    # Validate heuristic prediction with ML model output to prevent contradictory alerts
-    # If the ML model classifies healthy but heuristic flagged mild risk, align status
+    # Validate heuristic prediction with ML model output
     status = "alert"
-    if prediction == "Healthy":
-        status = "healthy"
+    final_prediction = prediction
+
+    if prediction == "Healthy" and len(flags) > 0:
+        # If the robust heuristic flagged a disease, prioritize it over the baseline ML model
+        primary = flags[0].split(" — ")[0].replace(" Risk", "").replace(" Detected", "")
+        final_prediction = primary
+    elif len(flags) > 0 and prediction != "Healthy":
+        final_prediction = prediction
 
     return jsonify({
-        "prediction": prediction,
+        "prediction": final_prediction,
         "values": latest_values,
         "flags": flags,
         "status": status
