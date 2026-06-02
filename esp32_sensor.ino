@@ -6,8 +6,8 @@
 // ==========================================
 // CONFIGURATION
 // ==========================================
-const char* ssid = "vijayvivo";
-const char* password = "123456789";
+const char* ssid = "OPPO K13 5G 2B62";
+const char* password = "nointernet";
 const char* serverName = "http://10.238.149.66:5000/sensor_data";
 
 // MQ sensor pins (analog)
