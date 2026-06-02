@@ -8,7 +8,7 @@
 // ==========================================
 const char* ssid = "vijayvivo";
 const char* password = "123456789";
-const char* serverName = "http://10.183.206.66:5000/sensor_data";
+const char* serverName = "http://10.238.149.66:5000/sensor_data";
 
 // MQ sensor pins (analog)
 #define MQ2_PIN 35   // MQ-2 connected to GPIO 35

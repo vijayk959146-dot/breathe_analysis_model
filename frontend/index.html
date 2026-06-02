@@ -156,7 +156,7 @@
 
     // Simple status check
     setInterval(() => {
-      fetch("http://10.183.206.66:5000/data")
+      fetch("http://10.238.149.66:5000/data")
         .then(response => {
           // If the server responds at all (including 200 or 400), the backend is online!
           if (response.status === 200 || response.status === 400) {

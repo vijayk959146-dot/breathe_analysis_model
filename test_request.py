@@ -1,7 +1,7 @@
 import urllib.request
 import json
 
-url = "http://127.0.0.1:5000/sensor_data"
+url = "http://10.238.149.66:5000/sensor_data"
 data = {"mq2": 2.0, "mq3": 1.5, "mq7": 3.0, "mq135": 4.0}
 
 req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={'Content-Type': 'application/json'})

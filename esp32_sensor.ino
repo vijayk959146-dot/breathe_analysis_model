@@ -5,7 +5,7 @@
 
 const char* ssid       = "vijayvivo";
 const char* password   = "123456789";
-const char* serverName = "http://10.183.206.66:5000/sensor_data";
+const char* serverName = "http://10.238.149.66:5000/sensor_data";
 
 // MQ sensor pins (ESP32 ADC1 only — ADC2 conflicts with WiFi)
 #define MQ2_PIN   35
@@ -37,6 +37,12 @@ void setup() {
 
   Serial.begin(115200);
   delay(1000);
+
+  // Explicitly set sensor pins as inputs
+  pinMode(MQ2_PIN, INPUT);
+  pinMode(MQ3_PIN, INPUT);
+  pinMode(MQ7_PIN, INPUT);
+  pinMode(MQ135_PIN, INPUT);
 
   // Full ADC range (0-3.3V)
 #if ESP_ARDUINO_VERSION_MAJOR >= 3
@@ -200,6 +206,23 @@ void loop() {
                          ",\"mq3\":"   + String(ratio_mq3,   2) +
                          ",\"mq7\":"   + String(ratio_mq7,   2) +
                          ",\"mq135\":" + String(ratio_mq135, 2) + "}";
+
+    // --- DEBUG: Raw TCP test ---
+    String serverIP   = "10.238.149.66";
+    const uint16_t port = 5000;
+    WiFiClient tcpClient;
+    Serial.print("[DEBUG] TCP to ");
+    Serial.print(serverIP);
+    Serial.print(":");
+    Serial.print(port);
+    Serial.print(" ... ");
+    if (tcpClient.connect(serverIP.c_str(), port)) {
+      Serial.println("SUCCESS");
+      tcpClient.stop();
+    } else {
+      Serial.println("FAIL");
+    }
+    // ---------------------------
 
     HTTPClient http;
     http.begin(serverName);
