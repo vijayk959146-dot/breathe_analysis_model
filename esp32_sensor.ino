@@ -3,9 +3,9 @@
 #include "soc/soc.h"           // Disable brownout
 #include "soc/rtc_cntl_reg.h"  // Disable brownout
 
-const char* ssid       = "vijayvivo";
-const char* password   = "123456789";
-const char* serverName = "http://10.238.149.66:5000/sensor_data";
+const char* ssid       = "BOOK5_VIJAYAK 3238";
+const char* password   = "39Kt33&8";
+const char* serverName = "http://192.168.137.1:5000/sensor_data";
 
 // MQ sensor pins (ESP32 ADC1 only — ADC2 conflicts with WiFi)
 #define MQ2_PIN   35
