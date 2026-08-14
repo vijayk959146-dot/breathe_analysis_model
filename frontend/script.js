@@ -88,7 +88,8 @@ let latestData = null; // Store the latest fetched data
 
 async function fetchData() {
   try {
-    const response = await fetch("http://10.238.149.66:5000/data", {
+    const backendUrl = window.getBackendUrl ? window.getBackendUrl() : "http://10.238.149.66:5000";
+    const response = await fetch(`${backendUrl}/data`, {
       method: "GET",
       headers: { "Content-Type": "application/json" }
     });

@@ -6,6 +6,7 @@
   <title>AirInsight - Breath Analysis Platform</title>
   <link rel="stylesheet" href="style.css">
   <script src="firebase-config.js"></script>
+  <script src="settings.js"></script>
 </head>
 <body>
   <nav class="nav-dashboard">
@@ -156,7 +157,8 @@
 
     // Simple status check
     setInterval(() => {
-      fetch("http://10.238.149.66:5000/data")
+      const backendUrl = window.getBackendUrl ? window.getBackendUrl() : "http://10.238.149.66:5000";
+      fetch(`${backendUrl}/data`)
         .then(response => {
           // If the server responds at all (including 200 or 400), the backend is online!
           if (response.status === 200 || response.status === 400) {
