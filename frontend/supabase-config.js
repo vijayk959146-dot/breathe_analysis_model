@@ -8,7 +8,7 @@
  */
 
 const supabaseConfig = {
-  url: "YOUR_SUPABASE_URL",
+  url: "https://rxbbvqbryafhutxhnerk.supabase.co",
   anonKey: "YOUR_SUPABASE_ANON_KEY"
 };
 
