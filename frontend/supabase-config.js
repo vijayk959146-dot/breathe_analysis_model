@@ -9,7 +9,7 @@
 
 const supabaseConfig = {
   url: "https://rxbbvqbryafhutxhnerk.supabase.co",
-  anonKey: "YOUR_SUPABASE_ANON_KEY"
+  anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4YmJ2cWJyeWFmaHV0eGhuZXJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2ODc0NTUsImV4cCI6MjEwMjI2MzQ1NX0.Kk1ZhHlJCI1qmOJItBI6NkvEYh9GslxblZ7NaEc_x0A"
 };
 
 // Check if developer has replaced placeholders
